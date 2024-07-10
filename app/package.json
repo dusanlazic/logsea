@@ -1,0 +1,16 @@
+{
+  "name": "logsea",
+  "version": "0.0.0",
+  "description": "View real-time logs of your containers from your web browser",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dušan Lazić",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dockerode": "^4.0.2",
+    "express": "^4.19.2"
+  }
+}
