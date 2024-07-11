@@ -1,6 +1,6 @@
 {
   "name": "logsea",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "View real-time logs of your containers from your web browser",
   "main": "index.js",
   "scripts": {

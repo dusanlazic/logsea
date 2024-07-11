@@ -21,15 +21,38 @@ app.get('/api/containers/:id/logs', async (req, res) => {
             tail: 100
         });
 
-        stream.on('data', (data) => {
-            res.write(data.toString());
-        });
+        const isTty = (await container.inspect()).Config.Tty;
+
+        if (isTty) {
+            stream.on('data', (data) => {
+                res.write(data.toString());
+            });
+
+            req.on('close', () => {
+                stream.destroy();
+            });
+        } else {
+            const stdoutStream = new require('stream').PassThrough();
+            const stderrStream = new require('stream').PassThrough();
+
+            docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+
+            stdoutStream.on('data', (data) => {
+                res.write(data.toString());
+            });
+
+            stderrStream.on('data', (data) => {
+                res.write(data.toString());
+            });
+
+            req.on('close', () => {
+                stdoutStream.destroy();
+                stderrStream.destroy();
+            });
+        }
+
         stream.on('end', () => {
             res.end();
-        });
-
-        req.on('close', () => {
-            stream.destroy();
         });
     } catch (err) {
         console.error(err);
