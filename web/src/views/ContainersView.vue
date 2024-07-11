@@ -52,23 +52,27 @@ const fetchContainers = async () => {
   }
 };
 
-const openLogs = (containerId, event) => {
+const openLogs = (containerId, containerName, event) => {
   const url = `/logs/${containerId}`;
   if (event.button === 0) {
     router.push(url);
+    document.title = `docker logs ${containerName}`;
   } else if (event.button === 1) {
-    window.open(url, '_blank');
+    window.open(`${url}#${containerName}`, '_blank');
   }
 };
 
-onMounted(fetchContainers);
+onMounted(() => {
+  document.title = `Logsea`
+  fetchContainers();
+});
 </script>
 
 <template>
   <div class="grid-container">
     <div v-for="container in containers" :key="container.id" class="grid-item fade-in"
       :style="{ borderTopColor: getStatusColor(container.status) }"
-      @mousedown="event => openLogs(container.id.slice(0, 8), event)">
+      @mousedown="event => openLogs(container.id.slice(0, 8), container.name, event)">
 
       <p class="container-id">{{ container.id.slice(0, 8) }}</p>
 

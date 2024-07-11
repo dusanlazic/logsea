@@ -33,6 +33,10 @@ async function fetchAndDisplayLogs() {
 }
 
 onMounted(() => {
+  if (document.title === "Logsea" && window.location.hash) {
+    document.title = `docker logs ${window.location.hash.substring(1)}`;
+  }
+
   terminalRef.value.writeData('Fetching logs...\n');
 
   fetchAndDisplayLogs();
