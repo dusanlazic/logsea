@@ -9,8 +9,10 @@
   "author": "Dušan Lazić",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
     "dockerode": "^4.0.2",
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "cors": "^2.8.5"
   }
 }

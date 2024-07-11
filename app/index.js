@@ -1,13 +1,16 @@
 const express = require('express');
+const path = require('path');
 const Docker = require('dockerode');
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-const cors = require('cors');
 const app = express();
-const port = 8000;
+const port = process.env.PORT || 8000;
 
-app.use(cors({ origin: '*' }));
+if (process.env.NODE_ENV === 'development') {
+    const cors = require('cors');
+    app.use(cors({ origin: '*' }));
+}
 
-app.get('/containers/:id/logs', async (req, res) => {
+app.get('/api/containers/:id/logs', async (req, res) => {
     const containerId = req.params.id;
     try {
         const container = docker.getContainer(containerId);
@@ -34,7 +37,7 @@ app.get('/containers/:id/logs', async (req, res) => {
     }
 });
 
-app.get('/containers', async (req, res) => {
+app.get('/api/containers', async (req, res) => {
     try {
         const containers = await docker.listContainers({ all: true });
         const containerDetails = await Promise.all(containers.map(async containerInfo => {
@@ -59,6 +62,12 @@ app.get('/containers', async (req, res) => {
     }
 });
 
+app.use(express.static(path.join(__dirname, 'dist')));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+});
+
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Logsea is running on port ${port}`);
 });

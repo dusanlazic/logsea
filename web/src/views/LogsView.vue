@@ -3,13 +3,15 @@ import TerminalComponent from '@/components/Terminal.vue';
 import { useRoute } from 'vue-router'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const route = useRoute();
 const containerId = ref(route.params.id);
 const terminalRef = ref(null);
 const aborter = new AbortController();
 
 async function fetchAndDisplayLogs() {
-  const logsUrl = `${import.meta.env.VITE_API_URL}/containers/${containerId.value}/logs`;
+  const logsUrl = `${apiUrl}/containers/${containerId.value}/logs`;
 
   try {
     const response = await fetch(logsUrl, { signal: aborter.signal });

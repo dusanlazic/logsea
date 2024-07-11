@@ -4,8 +4,9 @@ import { Icon } from '@iconify/vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const containers = ref([]);
-const apiBaseUrl = import.meta.env.VITE_API_URL;
 const router = useRouter();
 
 const getStatusColor = (status) => {
@@ -44,7 +45,7 @@ const getHealthIcon = (health) => {
 
 const fetchContainers = async () => {
   try {
-    const response = await axios.get(`${apiBaseUrl}/containers`);
+    const response = await axios.get(`${apiUrl}/containers`);
     containers.value = response.data;
   } catch (error) {
     console.error('Failed to fetch containers:', error);
