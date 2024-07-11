@@ -1,9 +1,9 @@
 <template>
     <div ref="term" class="terminal"></div>
 </template>
-  
+
 <script setup>
-import { ref, onMounted, onUnmounted, onUpdated } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeUnmount, onUpdated } from 'vue';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '../../node_modules/@xterm/xterm/css/xterm.css';
@@ -19,6 +19,7 @@ function useTerminal(containerRef) {
             fontSize: 16,
             fontFamily: 'Fira Code, Consolas, monospace',
             allowProposedApi: true,
+            convertEol: true,
         };
 
         terminal.value = new Terminal(terminalProps);
@@ -30,11 +31,12 @@ function useTerminal(containerRef) {
         window.addEventListener('resize', fitTerminal);
     });
 
-    onUnmounted(() => {
-        if (terminal.value) {
+    onBeforeUnmount(() => {
+        try {
             terminal.value.dispose();
-        }
+        } catch (error) {
 
+        }
         window.removeEventListener('resize', fitTerminal);
     });
 
@@ -43,9 +45,11 @@ function useTerminal(containerRef) {
     });
 
     const writeData = (data) => {
-        if (terminal.value) {
-            terminal.value.write(data);
-        }
+        terminal.value.write(data);
+    };
+
+    const clear = () => {
+        terminal.value.clear();
     };
 
     const zoomIn = () => adjustFontSize(3);
@@ -62,20 +66,19 @@ function useTerminal(containerRef) {
         fitAddon.fit();
     };
 
-    return { writeData, zoomIn, zoomOut };
+    return { writeData, zoomIn, zoomOut, clear };
 }
 
 const term = ref(null);
-const { writeData, zoomIn, zoomOut } = useTerminal(term);
+const { writeData, zoomIn, zoomOut, clear } = useTerminal(term);
 
 
-defineExpose({ writeData, zoomIn, zoomOut });
+defineExpose({ writeData, zoomIn, zoomOut, clear });
 </script>
-  
+
 <style scoped>
 .terminal {
     width: 100%;
     height: 100%;
 }
 </style>
-  

@@ -1,36 +1,44 @@
 <script setup>
 import TerminalComponent from '@/components/Terminal.vue';
 import { useRoute } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const route = useRoute();
 const containerId = ref(route.params.id);
 const terminalRef = ref(null);
+const aborter = new AbortController();
 
-function fetchAndDisplayLogs() {
-  const logsUrl = `http://localhost:8000/containers/${containerId.value}/logs`;
-  fetch(logsUrl).then(response => {
-    const reader = response.body.getReader();
-    function push() {
-      reader.read().then(({ done, value }) => {
-        if (!done) {
-          terminalRef.value.writeData(new TextDecoder().decode(value));
-          push();
-        }
-      }).catch(error => {
-        console.error('Error reading data: ', error);
-      });
+async function fetchAndDisplayLogs() {
+  const logsUrl = `${import.meta.env.VITE_API_URL}/containers/${containerId.value}/logs`;
+
+  try {
+    const response = await fetch(logsUrl, { signal: aborter.signal });
+
+    terminalRef.value.clear();
+
+    for await (const chunk of response.body) {
+      if (aborter.aborted) break;
+      terminalRef.value.writeData(chunk);
     }
-    push();
-  }).catch(error => {
-    console.error('Error fetching logs: ', error);
-  });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+
+    } else {
+      console.error('Error fetching logs: ', error);
+    }
+
+  }
 }
 
 onMounted(() => {
+  terminalRef.value.writeData('Fetching logs...\n');
+
   fetchAndDisplayLogs();
 });
 
+onBeforeUnmount(() => {
+  aborter.abort();
+});
 </script>
 
 <template>

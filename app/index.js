@@ -37,23 +37,22 @@ app.get('/containers/:id/logs', async (req, res) => {
 app.get('/containers', async (req, res) => {
     try {
         const containers = await docker.listContainers({ all: true });
-        const formattedContainers = containers.map(container => {
+        const containerDetails = await Promise.all(containers.map(async containerInfo => {
+            const container = docker.getContainer(containerInfo.Id);
+            const details = await container.inspect();
+            const healthStatus = details.State.Health ? details.State.Health.Status : null;
+
             return {
-                id: container.Id,
-                name: container.Names[0].replace(/^\//, ''),
-                status: container.State,
-                image: container.Image,
-                ports: container.Ports.map(port => {
-                    return {
-                        IP: port.IP,
-                        PrivatePort: port.PrivatePort,
-                        PublicPort: port.PublicPort,
-                        Type: port.Type
-                    };
-                })
+                id: containerInfo.Id,
+                name: containerInfo.Names[0].replace(/^\//, ''),
+                status: containerInfo.State,
+                health: healthStatus,
+                image: containerInfo.Image,
+                tty: details.Config.Tty
             };
-        });
-        res.json(formattedContainers);
+        }));
+
+        res.json(containerDetails);
     } catch (err) {
         console.error(err);
         res.status(500).send('Failed to list containers');
