@@ -1,20 +1,15 @@
-FROM node:22-alpine AS builder
-
+FROM node:18-alpine AS build-web
 WORKDIR /app
-
-COPY web .
-
-RUN npm ci
-
+ADD web .
+RUN npm install
 RUN npm run build
 
-FROM node:22-alpine AS runner
-
+FROM node:18-alpine AS build-app
 WORKDIR /app
-
 COPY app .
-COPY --from=builder /app/dist /app/dist
+RUN npm install --only=production
+COPY --from=build-web /app/dist /app/dist
 
-RUN npm ci
-
-CMD ["node", "index.js"]
+FROM gcr.io/distroless/nodejs18-debian11
+COPY --from=build-app /app /
+CMD ["index.js"]
