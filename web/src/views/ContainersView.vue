@@ -1,6 +1,5 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { Icon } from '@iconify/vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
@@ -15,8 +14,11 @@ const getStatusColor = (status) => {
       return '#6A5ACD'; // SlateBlue
     case 'restarting':
       return '#FF8C00'; // DarkOrange
+    case 'unhealthy':
+      return '#FF6347'; // Tomato
+    case 'healthy':
     case 'running':
-      return '#9ACD32'; // YellowGreen
+      return '#6B8E23'; // OliveDrab
     case 'removing':
       return '#A9A9A9'; // DarkGray
     case 'paused':
@@ -30,18 +32,12 @@ const getStatusColor = (status) => {
   }
 };
 
-const getHealthIcon = (health) => {
-  switch (health) {
-    case 'starting':
-      return 'ri:progress-0-fill';
-    case 'healthy':
-      return 'ri:heart-pulse-fill';
-    case 'unhealthy':
-      return 'ri:alert-fill';
-    default:
-      return null;
+const getAppropriateStatus = (container) => {
+  if (container.health && container.status === 'running') {
+    return container.health;
   }
-}
+  return container.status;
+};
 
 const fetchContainers = async () => {
   try {
@@ -71,14 +67,16 @@ onMounted(() => {
 <template>
   <div class="grid-container">
     <div v-for="container in containers" :key="container.id" class="grid-item fade-in"
-      :style="{ borderTopColor: getStatusColor(container.status) }"
+      :style="{ borderTopColor: getStatusColor(getAppropriateStatus(container)) }"
       @mousedown="event => openLogs(container.id.slice(0, 8), container.name, event)">
 
-      <p class="container-id">{{ container.id.slice(0, 8) }}</p>
+      <div class="container-details">
+        <p class="container-id">{{ container.id.slice(0, 8) }}</p>
+        <p class="container-status" :style="{ background: getStatusColor(getAppropriateStatus(container)) }">{{
+          getAppropriateStatus(container) }}</p>
+      </div>
 
-      <h3>{{ container.name }}
-        <Icon :icon="getHealthIcon(container.health)" inline="true" style="font-size: 24px;" />
-      </h3>
+      <h3>{{ container.name }}</h3>
 
       <p class="container-image">{{ container.image }}</p>
     </div>
@@ -97,7 +95,7 @@ onMounted(() => {
 }
 
 .fade-in {
-  animation: fadeIn 0.3s;
+  animation: fadeIn 0.1s;
 }
 
 .grid-container {
@@ -109,29 +107,55 @@ onMounted(() => {
 
 .grid-item {
   background: #1b1b1b;
-  border-top: 5px solid;
+
   color: #cfcfcf;
   padding: 20px;
   font-family: 'Fira Code', monospace;
   border-radius: 8px;
+
+  transition: background 0.1s ease, box-shadow 0.1s ease;
 }
 
 .grid-item:hover {
-  background: #242424;
+  background: #2b2b2b;
   cursor: pointer;
+  -webkit-box-shadow: inset 0px 0px 0px 1px #3a3a3a;
+  -moz-box-shadow: inset 0px 0px 0px 1px #3a3a3a;
+  box-shadow: inset 0px 0px 0px 1px #3a3a3a;
 }
 
 .grid-item h3 {
   margin: 0px;
-}
-
-.container-id {
-  color: #7a7a7a;
-  margin: 0px
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .container-image {
   color: #7a7a7a;
-  margin: 10px 0px 0px 0px;
+  margin: 8px 0px 0px 0px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.container-details {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 4px;
+}
+
+.container-id {
+  color: #7a7a7a;
+  margin: 0px;
+}
+
+.container-status {
+  color: white;
+  padding: 3px 8px 3px 8px;
+  margin: 0px -4px 0px 0px;
+  border-radius: 8px;
+  font-size: 9pt;
+  font-weight: bold;
 }
 </style>
