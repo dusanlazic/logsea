@@ -10,6 +10,14 @@ if (process.env.NODE_ENV === 'development') {
     app.use(cors({ origin: '*' }));
 }
 
+if (process.env.BASIC_AUTH_USERNAME && process.env.BASIC_AUTH_PASSWORD) {
+    const basicAuth = require('express-basic-auth')
+    app.use(basicAuth({
+        users: { [process.env.BASIC_AUTH_USERNAME]: process.env.BASIC_AUTH_PASSWORD },
+        challenge: true
+    }));
+}
+
 app.get('/api/containers/:id/logs', async (req, res) => {
     const containerId = req.params.id;
     try {
