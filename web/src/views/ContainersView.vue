@@ -8,6 +8,8 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 const containers = ref([]);
 const router = useRouter();
 
+const loaded = ref(false);
+
 const getStatusColor = (status) => {
   switch (status) {
     case 'created':
@@ -43,6 +45,7 @@ const fetchContainers = async () => {
   try {
     const response = await axios.get(`${apiUrl}/containers`);
     containers.value = response.data;
+    loaded.value = true;
   } catch (error) {
     console.error('Failed to fetch containers:', error);
   }
@@ -66,8 +69,16 @@ onMounted(() => {
 
 <template>
   <div class="grid-container">
-    <div v-for="container in containers" :key="container.id" class="grid-item fade-in"
-      :style="{ borderTopColor: getStatusColor(getAppropriateStatus(container)) }"
+    <div v-if="!loaded" v-for="i in 12" :key="i" class="grid-item-skeleton">
+      <div class="container-details">
+        <p class="container-id">&nbsp;</p>
+        <p class="container-status">&nbsp;</p>
+      </div>
+      <h3>● ● ● ●</h3>
+      <p class="container-image">&nbsp;</p>
+    </div>
+    
+    <div v-for="container in containers" :key="container.id" class="grid-item fade-in" 
       @mousedown="event => openLogs(container.id.slice(0, 8), container.name, event)">
 
       <div class="container-details">
@@ -91,6 +102,18 @@ onMounted(() => {
 
   100% {
     opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #1b1b1b;
+  }
+  50% {
+    background-color: #111111;
+  }
+  100% {
+    background-color: #1b1b1b;
   }
 }
 
@@ -124,7 +147,7 @@ onMounted(() => {
   box-shadow: inset 0px 0px 0px 1px #3a3a3a;
 }
 
-.grid-item h3 {
+h3 {
   margin: 0px;
   white-space: nowrap;
   overflow: hidden;
@@ -157,5 +180,19 @@ onMounted(() => {
   border-radius: 8px;
   font-size: 9pt;
   font-weight: bold;
+}
+
+.grid-item-skeleton {
+  background: #1b1b1b;
+  animation: pulse 1.5s infinite, fadeIn 3s;
+  color: #464646;
+  padding: 20px;
+  font-family: 'Fira Code', monospace;
+  border-radius: 8px;
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 </style>
