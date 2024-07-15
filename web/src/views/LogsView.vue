@@ -28,7 +28,17 @@ async function fetchAndDisplayLogs() {
     } else {
       console.error('Error fetching logs: ', error);
     }
+  }
+}
 
+function handleZoom(event) {
+  if (event.ctrlKey) {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      terminalRef.value.zoomIn();
+    } else {
+      terminalRef.value.zoomOut();
+    }
   }
 }
 
@@ -48,14 +58,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div id="terminal-container">
+  <div id="terminal-container" @wheel.prevent="handleZoom">
     <TerminalComponent ref="terminalRef" />
   </div>
 </template>
 
 <style scoped>
 #terminal-container {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
 }
 </style>

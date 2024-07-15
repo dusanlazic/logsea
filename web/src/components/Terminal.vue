@@ -58,7 +58,7 @@ function useTerminal(containerRef) {
 
     const adjustFontSize = (change) => {
         const newFontSize = terminal.value.options.fontSize + change;
-        terminal.value.options.fontSize = Math.min(Math.max(newFontSize, 12), 46);
+        terminal.value.options.fontSize = Math.min(Math.max(newFontSize, 12), 36);
         fitTerminal();
     };
 
