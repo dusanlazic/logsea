@@ -45,6 +45,8 @@ jobs:
         push: true
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: |
+          VERSION=${{ inputs.version }}
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1

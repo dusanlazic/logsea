@@ -2,6 +2,8 @@ FROM node:18-alpine AS build-web
 WORKDIR /app
 ADD web .
 RUN npm install
+ARG VERSION
+ENV VITE_LOGSEA_VERSION=$VERSION
 RUN npm run build
 
 FROM node:18-alpine AS build-app
