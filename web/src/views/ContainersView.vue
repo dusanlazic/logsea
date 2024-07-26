@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import axios from 'axios';
 
@@ -10,6 +10,7 @@ const version = import.meta.env.VITE_LOGSEA_VERSION || '0.1.0';
 const containers = ref([]);
 const searchQuery = ref('')
 const router = useRouter();
+const containerEventSource = ref(null);
 
 const loaded = ref(false);
 
@@ -34,6 +35,8 @@ const getStatusColor = (status) => {
       return 'DimGray';
     case 'starting':
       return 'MediumOrchid';
+    case 'destroyed':
+      return 'Black';
     default:
       return '#1B1B1B';
   }
@@ -52,8 +55,25 @@ const fetchContainers = async () => {
     containers.value = response.data;
     loaded.value = true;
   } catch (error) {
-    console.error('Failed to fetch containers:', error);
+    console.error('Failed to fetch containers.');
   }
+};
+
+const fetchContainerEvents = async () => {
+  containerEventSource.value = new EventSource(`${apiUrl}/events`);
+  containerEventSource.value.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(data)
+    const index = containers.value.findIndex(c => c.id === data.id);
+    if (index !== -1) {
+      containers.value[index] = {...containers.value[index], ...data};
+    } else {
+      containers.value.push(data);
+    }
+  };
+  containerEventSource.value.onerror = (error) => {
+    containerEventSource.value.close();
+  };
 };
 
 const openLogs = (containerId, containerName, event) => {
@@ -81,6 +101,11 @@ const filteredContainers = computed(() => {
 onMounted(() => {
   document.title = `Logsea`
   fetchContainers();
+  fetchContainerEvents();
+});
+
+onUnmounted(() => {
+  if (containerEventSource.value) containerEventSource.value.close();
 });
 </script>
 
@@ -212,6 +237,7 @@ h3 {
   border-radius: 8px;
   font-size: 9pt;
   font-weight: bold;
+  transition: background 0.5s ease;
 }
 
 .grid-item-skeleton {

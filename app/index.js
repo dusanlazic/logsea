@@ -18,6 +18,55 @@ if (process.env.BASIC_AUTH_USERNAME && process.env.BASIC_AUTH_PASSWORD) {
     }));
 }
 
+app.get('/api/events', async (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const stream = await docker.getEvents({
+        filters: {
+            type: ['container'],
+            event: ['start', 'die', 'pause', 'unpause', 'health_status', 'restart', 'destroy']
+        }
+    });
+
+    stream.on('data', async (data) => {
+        const event = JSON.parse(data.toString().trim());
+
+        let updatedHealth, updatedStatus;
+
+        if (event.Action === 'destroy') {
+            updatedStatus = 'destroyed';
+            updatedHealth = null;
+        } else {
+            const container = docker.getContainer(event.id);
+            const info = await container.inspect();
+
+            updatedStatus = info.State.Status;
+            updatedHealth = info.State.Health?.Status;
+        }
+
+        const output = {
+            id: event.id,
+            name: event.Actor.Attributes.name.replace(/^\//, ''),
+            image: event.Actor.Attributes.image,
+            status: updatedStatus,
+            health: updatedHealth,
+        };
+
+        res.write('data: ' + JSON.stringify(output) + '\n\n');
+    });
+
+    stream.on('end', () => {
+        res.end();
+    });
+
+    req.on('close', () => {
+        stream.destroy();
+    });
+});
+
+
 app.get('/api/containers/:id/logs', async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
