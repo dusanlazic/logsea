@@ -76,13 +76,15 @@ const fetchContainerEvents = async () => {
   };
 };
 
-const openLogs = (containerId, containerName, event) => {
-  const url = `/logs/${containerId}`;
+const handleItemClick = (container, event) => {
+  if (container.status === 'destroyed') return;
+
+  const url = `/logs/${container.id.slice(0, 8)}`;
   if (event.button === 1 || (event.button === 0 && event.ctrlKey)) {
-    window.open(`${url}#${containerName}`, '_blank');
+    window.open(`${url}#${container.name}`, '_blank');
   } else if (event.button === 0) {
     router.push(url);
-    document.title = `docker logs ${containerName}`;
+    document.title = `docker logs ${container.name}`;
   }
 };
 
@@ -132,8 +134,8 @@ onUnmounted(() => {
       <p class="container-image">&nbsp;</p>
     </div>
 
-    <div v-for="container in filteredContainers" :key="container.id" class="grid-item fade-in"
-      @mouseup="event => openLogs(container.id.slice(0, 8), container.name, event)">
+    <div v-for="container in filteredContainers" :key="container.id" class="grid-item fade-in" :class="{ destroyed: container.status === 'destroyed'}"
+      @mouseup="event => handleItemClick(container, event)">
 
       <div class="container-details">
         <p class="container-id">{{ container.id.slice(0, 8) }}</p>
@@ -202,6 +204,13 @@ onUnmounted(() => {
   background: #2b2b2b;
   cursor: pointer;
   border-color: #3a3a3a;
+}
+
+.grid-item.destroyed {
+  opacity: 0.5;
+  background: #1b1b1b;
+  border-color: #1b1b1b;
+  cursor: not-allowed;
 }
 
 h3 {
