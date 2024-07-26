@@ -19,6 +19,10 @@ if (process.env.BASIC_AUTH_USERNAME && process.env.BASIC_AUTH_PASSWORD) {
 }
 
 app.get('/api/containers/:id/logs', async (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     const containerId = req.params.id;
     try {
         const container = docker.getContainer(containerId);
@@ -33,7 +37,7 @@ app.get('/api/containers/:id/logs', async (req, res) => {
 
         if (isTty) {
             stream.on('data', (data) => {
-                res.write(data.toString());
+                res.write('data: ' + encodeURIComponent(data.toString()) + '\n\n');
             });
 
             req.on('close', () => {
@@ -46,11 +50,11 @@ app.get('/api/containers/:id/logs', async (req, res) => {
             docker.modem.demuxStream(stream, stdoutStream, stderrStream);
 
             stdoutStream.on('data', (data) => {
-                res.write(data.toString());
+                res.write('data: ' + encodeURIComponent(data.toString()) + '\n\n');
             });
 
             stderrStream.on('data', (data) => {
-                res.write(data.toString());
+                res.write('data: ' + encodeURIComponent(data.toString()) + '\n\n');
             });
 
             req.on('close', () => {
@@ -74,7 +78,7 @@ app.get('/api/containers', async (req, res) => {
         const containerDetails = await Promise.all(containers.map(async containerInfo => {
             const container = docker.getContainer(containerInfo.Id);
             const details = await container.inspect();
-            const healthStatus = details.State.Health ? details.State.Health.Status : null;
+            const healthStatus = details.State.Health?.Status;
 
             return {
                 id: containerInfo.Id,
@@ -88,7 +92,6 @@ app.get('/api/containers', async (req, res) => {
 
         res.json(containerDetails);
     } catch (err) {
-        console.error(err);
         res.status(500).send('Failed to list containers');
     }
 });

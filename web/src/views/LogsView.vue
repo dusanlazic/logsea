@@ -1,34 +1,28 @@
 <script setup>
 import TerminalComponent from '@/components/Terminal.vue';
 import { useRoute } from 'vue-router'
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const route = useRoute();
 const containerId = ref(route.params.id);
 const terminalRef = ref(null);
-const aborter = new AbortController();
+const logSource = ref(null);
 
 async function fetchAndDisplayLogs() {
-  const logsUrl = `${apiUrl}/containers/${containerId.value}/logs`;
+  logSource.value = new EventSource(`${apiUrl}/containers/${containerId.value}/logs`);
 
-  try {
-    const response = await fetch(logsUrl, { signal: aborter.signal });
+  terminalRef.value.clear();
 
-    terminalRef.value.clear();
+  logSource.value.onmessage = (event) => {
+    terminalRef.value.writeData(decodeURIComponent(event.data));
+  };
 
-    for await (const chunk of response.body) {
-      if (aborter.aborted) break;
-      terminalRef.value.writeData(chunk);
-    }
-  } catch (error) {
-    if (error.name === 'AbortError') {
-
-    } else {
-      console.error('Error fetching logs: ', error);
-    }
-  }
+  logSource.value.onerror = (error) => {
+    console.error('Failed to fetch logs.');
+    logSource.value.close();
+  };
 }
 
 function handleZoom(event) {
@@ -47,13 +41,11 @@ onMounted(() => {
     document.title = `docker logs ${window.location.hash.substring(1)}`;
   }
 
-  terminalRef.value.writeData('Fetching logs...\n');
-
   fetchAndDisplayLogs();
 });
 
-onBeforeUnmount(() => {
-  aborter.abort();
+onUnmounted(() => {
+  if (logSource.value) logSource.value.close();
 });
 </script>
 
