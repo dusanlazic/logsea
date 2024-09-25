@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "dockerode": "^4.0.2",
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "express-basic-auth": "^1.2.1"
   },
   "devDependencies": {
